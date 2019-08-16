@@ -1,0 +1,3 @@
+# qapla
+
+Host static sites.

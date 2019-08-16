@@ -1,32 +1,50 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Main (main) where
 
-import Import
-import Run
-import RIO.Process
+import Qapla
+import RIO
 import Options.Applicative.Simple
+import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Autohead
+import Network.Wai.Middleware.Gzip
+import Network.Wai.Middleware.RequestLogger
 import qualified Paths_qapla
+
+data Options = Options
+  { dir :: !FilePath
+  , host :: !String
+  , port :: !Int
+  }
 
 main :: IO ()
 main = do
-  (options, ()) <- simpleOptions
+  (Options {..}, ()) <- simpleOptions
     $(simpleVersion Paths_qapla.version)
-    "Header for command line arguments"
-    "Program description, also for command line arguments"
+    "Host statically generated site"
+    "Host statically generated site"
     (Options
-       <$> switch ( long "verbose"
-                 <> short 'v'
-                 <> help "Verbose output?"
+       <$> strOption
+                  ( long "dir"
+                 <> help "Directory to host"
+                 <> metavar "DIRECTORY"
+                  )
+       <*> strOption
+                  ( long "host"
+                 <> help "Host to listen on, either IP address, *4, *6, or *"
+                 <> metavar "HOST"
+                  )
+       <*> option auto
+                  ( long "port"
+                 <> help "Port to listen on"
+                 <> metavar "PORT"
                   )
     )
     empty
-  lo <- logOptionsHandle stderr (optionsVerbose options)
-  pc <- mkDefaultProcessContext
-  withLogFunc lo $ \lf ->
-    let app = App
-          { appLogFunc = lf
-          , appProcessContext = pc
-          , appOptions = options
-          }
-     in runRIO app run
+  app <- qapla dir
+  let settings = setPort port $ setHost (fromString host) defaultSettings
+  runSettings settings $
+    autohead $
+    gzip def $
+    logStdout app

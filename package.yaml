@@ -23,10 +23,11 @@ dependencies:
 - base >= 4.11 && < 10
 - rio >= 0.1.8.0
 - wai
-- warp
 - http-types
 - mime-types
 - conduit
+- html-conduit
+- xml-conduit
 
 ghc-options:
 - -Wall
@@ -47,6 +48,8 @@ executables:
     dependencies:
     - qapla
     - optparse-simple
+    - warp
+    - wai-extra
 
     ghc-options:
     - -threaded

@@ -14,7 +14,7 @@ import qualified Paths_qapla
 
 data Options = Options
   { dir :: !FilePath
-  , host :: !String
+  , mhost :: !(Maybe String)
   , port :: !Int
   }
 
@@ -30,11 +30,11 @@ main = do
                  <> help "Directory to host"
                  <> metavar "DIRECTORY"
                   )
-       <*> strOption
+       <*> optional (strOption
                   ( long "host"
                  <> help "Host to listen on, either IP address, *4, *6, or *"
                  <> metavar "HOST"
-                  )
+                  ))
        <*> option auto
                   ( long "port"
                  <> help "Port to listen on"
@@ -43,7 +43,7 @@ main = do
     )
     empty
   app <- qapla dir
-  let settings = setPort port $ setHost (fromString host) defaultSettings
+  let settings = setPort port $ maybe id (setHost . fromString) mhost defaultSettings
   runSettings settings $
     autohead $
     gzip def $
